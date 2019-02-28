@@ -8,7 +8,7 @@ The idea here is design a conceptual pipeline according to DevOps best practices
 
 
 At CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
-- Cfn_lint
+- Cfn-lint
 - Cfn_nag
 - TaskCat
 
@@ -29,7 +29,8 @@ After that, ChangeSet is applied to Production environment and Replica environem
 
 Two lambda functions send informations to slack channel. One to CodePipeline and another to CodeCommit.
 
-AWS Services:
+
+### AWS Services:
 - CodeCommit
 - Code Pipeline
 - Code Build
@@ -70,58 +71,11 @@ At this point CodePipeline will start and deploy Production and Replica Stacks.
 Configure this files:
 <todo>
 
-## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
-
-
-
-
-aws cloudformation create-stack --stack-name Project02 --template-body file://templates/cfn-pipeline.yaml --capabilities CAPABILITY_IAM 
-
-cd novorepo
-git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/Project02 .
-cp -rpf ../meurepo/* .
-cp -rpf hooks/pre-commit .git/hooks 
-
-git add *
-git commit -m "first commit" 
-git push origin master
-git checkout -b staging master
-git commit -m "first commit at staging" 
-git push origin staging   
-
-
-
-https://br.atlassian.com/git/tutorials/using-branches/git-merge
-
-
+* **Henrique Bueno** - *Initial work* - [PurpleBooth](https://github.com/hgbueno)
 
 
 
