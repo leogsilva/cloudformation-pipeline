@@ -73,24 +73,7 @@ At this point CodePipeline starts and deploy Production and Replica Stacks.
 
 ### Project structure
 
-├── README.md
-├── buildspecs
-│   ├── buildspec-cfn-createpullrequest.yml
-│   ├── buildspec-cfn-createreplica.yml
-│   ├── buildspec-cfn-disabletransition.yml
-│   ├── buildspec-cfn-enabletransition.yml
-│   ├── buildspec-cfn-lint.yml
-│   ├── buildspec-cfn_nag.yml
-│   └── buildspec-taskcat.yml
-├── ci
-│   ├── debug-input.json
-│   └── taskcat.yml
-├── hooks
-│   ├── pre-commit
-│   └── pre-push
-└── templates
-    ├── cfn-layer-base.yaml
-    └── cfn-pipeline.yaml
+![Alt text](img02.png?raw=true "Pipeline")
     
     
 ### Configuration
