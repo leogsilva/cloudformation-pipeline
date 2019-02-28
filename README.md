@@ -1,5 +1,7 @@
 # Pipeline to Delivery Cloudformation Templates
 
+![Alt text](img.png?raw=true "Pipeline")
+
 This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates, ensuring reliability to deploy.
 
 The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation
