@@ -74,7 +74,7 @@ At this point CodePipeline starts and deploy Production and Replica Stacks.
 
 ### Project structure
 
-![Screenshot](img02.png)
+![Screenshot](img03.png)
     
     
 ### Configuration
