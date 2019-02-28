@@ -1,6 +1,8 @@
-# Conceptual pipeline for delivery of stacks written in cloudformation
+# Pipeline to Delivery Cloudformation Templates
 
 This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates, ensuring reliability to deploy.
+
+The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation
 
 
 At CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
@@ -8,11 +10,14 @@ At CI (Continuous Integration) step, the pipeline executes these tools to verify
 - Cfn_nag
 - TaskCat
 
-After that, CodePipeline starts CD (Continuous Delivery) step, 
-The "Test" step creates a replica of the production environment.
+After that, CodePipeline starts CD (Continuous Delivery) step. The "Test" step creates a replica of the production environment.
+
 In parallel, creates a ChangeSet to be applied at Production Environment. 
+
 After these steps, a PullRequest is automatically created. 
+
 At this time, the approver has various information available to decide whether to accept or not the PullRequest.
+
 The approver can access the Replica environment and the ChangeSet to verify all the changes that will be applied at Production environment.
 
 There's a lambda function that get the change status when PR is approved and allow pipeline to go on.
@@ -22,14 +27,13 @@ After that, ChangeSet is applied to Production environment and Replica environem
 
 Two lambda functions send informations to slack channel. One to CodePipeline and another to CodeCommit.
 
-
-CodeCommit
-Code Pipeline
-Code Build
-Lambda
-CloudWatch
-
-The idea here is design a conceptual pipeline according to DevOps best practices.
+AWS Services:
+- CodeCommit
+- Code Pipeline
+- Code Build
+- Lambda
+- CloudWatch
+- CloudFormation
 
 
 ## Getting Started
@@ -42,13 +46,12 @@ aws cloudformation create-stack --stack-name <MyStackName> --template-body file:
 ```
 
 After that, populate the CodeCommit Repository:
-git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/<MyRepoName> .
 ```
+git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/<MyRepoName> .
 <MyRepoName> = <MyStackName> 
 
-
-cp -rpf ../meurepo/* .
-cp -rpf hooks/pre-commit .git/hooks 
+cp -rpf /files/* .
+cp -rpf hooks/* .git/hooks 
 
 git add *
 git commit -m "first commit" 
@@ -58,47 +61,12 @@ git commit -m "first commit at staging"
 git push origin staging   
 ```
 
-### Installing
+At this point CodePipeline will start and deploy Production and Replica Stacks.
 
-A step by step series of examples that tell you how to get a development env running
+### Configuration
 
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
+Configure this files:
+<todo>
 
 ## Built With
 
