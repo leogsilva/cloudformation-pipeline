@@ -89,9 +89,4 @@ templates/cfn-pipeline.yaml
 You can also pass these informations as command line parameters.
 
 
-## Authors
-
-* **Henrique Bueno** - [GitHub](https://github.com/hgbueno)
-
-
 
