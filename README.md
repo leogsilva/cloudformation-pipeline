@@ -3,6 +3,7 @@
 ![Alt text](img.png?raw=true "Pipeline")
 
 
+
 ### Introduction
 
 
@@ -60,7 +61,7 @@ git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/<MyRepoName> .
 cp -rpf /files/* .
 cp -rpf hooks/* .git/hooks 
 
-git add *
+git add *true
 git commit -m "first commit" 
 git push origin master
 git checkout -b staging master
@@ -73,7 +74,7 @@ At this point CodePipeline starts and deploy Production and Replica Stacks.
 
 ### Project structure
 
-![Alt text](img02.png?raw=true "Pipeline")
+![Screenshot](img02.png)
     
     
 ### Configuration
