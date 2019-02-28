@@ -1,0 +1,32 @@
+#!/bin/bash
+
+echo "EXECUTING PRE-PUSH VALIDATION ...... "; seq 3 | xargs -I -- echo
+
+echo "CHECKING IF PIPELINE IS CURRENTLY RUNNING ...... "
+
+# Get Repository Name. In this case Repository Name is the same as Pipeline Name.
+repository=$(git remote --verbose | grep origin | cut -f2 | cut -d' ' -f1 |rev | cut -d/ -f1 |rev |uniq)
+
+# Validate if Pipeline is currently running
+pipeline_running=$(aws codepipeline get-pipeline-state --name $repository |grep -i "status" |grep -i "InProgress" | cut -d\" -f 4 |uniq |wc -l |xargs)
+
+if [ $pipeline_running > 0 ]
+then 
+  echo "the pipeline $repository is currently running. Wait for the concussion to submit your update."
+fi
+
+
+function_imprime()
+{
+  seq 3 | xargs -I -- echo; echo  "******************** PRE-PUSH STATUS: $1 ********************"
+}
+
+if [ $pipeline_running -eq 0 ] 
+then
+  function_imprime SUCCESS
+else
+  function_imprime FAIL
+  exit 1
+fi
+
+

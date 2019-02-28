@@ -1,0 +1,600 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Pipeline"
+
+Parameters:
+  SlackUser:
+    Description: Slack User Name
+    Type: String
+    Default: pipelines
+  SlackChannel:
+    Description: Slack Channel Name
+    Type: String
+    Default: pipeline
+  SlackURL:
+    Description: Slack URL
+    Type: String
+    Default: https://hooks.slack.com/services/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
+  TemplateToDeploy:
+    Description: Template Name to Deploy
+    Type: String
+    Default: "templates/cfn-layer-base.yaml"
+
+Resources: 
+  ArtifactStoreBucket:
+    Type: AWS::S3::Bucket
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref AWS::StackName
+ 
+  ProjectPipeline: 
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt [CodePipelineRole, Arn]
+      Name: !Ref AWS::StackName
+      ArtifactStore:
+        Location: !Ref ArtifactStoreBucket
+        Type: S3
+    
+      Stages: 
+        - Name: Source
+          Actions:
+            - Name: GetSourceCode
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeCommit
+              Configuration:
+                BranchName: staging
+                RepositoryName: !Ref AWS::StackName
+              OutputArtifacts:
+                - Name: Out-Source
+              RunOrder: 1
+        - Name: Build
+          Actions:
+          - Name: DisablePipelineTransition
+            ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+            InputArtifacts:
+              - Name: Out-Source
+            Configuration:
+                ProjectName: !Ref DisablePipelineTransition
+            RunOrder: 1
+          - Name: Cfn-Lint
+            ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+            OutputArtifacts:
+              - Name: Out-Cfn-Lint
+            InputArtifacts:
+              - Name: Out-Source
+            Configuration:
+                ProjectName: !Ref CfnLint
+            RunOrder: 1
+          - Name: Cfn_Nag
+            ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+            OutputArtifacts:
+              - Name: Out-Cfn-Nag
+            InputArtifacts:
+              - Name: Out-Source
+            Configuration:
+                ProjectName: !Ref CfnNag
+            RunOrder: 1
+          - Name: TaskCat
+            ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+            OutputArtifacts:
+              - Name: Out-TaskCat
+            InputArtifacts:
+              - Name: Out-Source
+            Configuration:
+                ProjectName: !Ref TaskCat
+            RunOrder: 1
+
+        - Name: Test
+          Actions:
+            - Name: CreateReplicaProd
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+              OutputArtifacts:
+                - Name: Out-CreateReplicaSetProd
+              InputArtifacts:
+                - Name: Out-Source
+              Configuration:
+                ProjectName: !Ref CreateReplicaProd
+              RunOrder: 1
+            - Name: CreateChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE 
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt [CloudFormationRole, Arn]
+                StackName: !Join [ "-", [ !Ref "AWS::StackName", "Replica" ] ]
+                TemplatePath: !Join [ "::", [ "Out-Source", !Ref "TemplateToDeploy"]]
+                ChangeSetName: !Join [ "-", [ !Ref "AWS::StackName", "Replica" ] ]
+              InputArtifacts:
+                - Name: Out-Source
+              RunOrder: 2
+
+            - Name: ExecuteChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt [CloudFormationRole, Arn]
+                StackName: !Join [ "-", [ !Ref "AWS::StackName", "Replica" ] ]
+                ChangeSetName: !Join [ "-", [ !Ref "AWS::StackName", "Replica" ] ]
+              InputArtifacts:
+                - Name: Out-Source
+              RunOrder: 3
+            - Name: CreateChangeSetStackProd
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE 
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt [CloudFormationRole, Arn]
+                StackName: !Join [ "-", [ !Ref "AWS::StackName", "Prod" ] ]
+                ChangeSetName: !Join [ "-", [ !Ref "AWS::StackName", "Prod" ] ]
+                TemplatePath: !Join [ "::", [ 'Out-Source', !Ref TemplateToDeploy ] ]
+              InputArtifacts:
+                - Name: Out-Source
+              RunOrder: 4
+
+        - Name: Approval
+          Actions:
+          - Name: CreatePullRequest
+            ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+            InputArtifacts:
+              - Name: Out-Source
+            Configuration:
+                ProjectName: !Ref CreatePullRequest
+            RunOrder: 1
+
+          - Name: WaitPullRequestApproval
+            ActionTypeId:
+              Category: Approval
+              Owner: AWS
+              Version: "1"
+              Provider: Manual
+            Configuration:
+              CustomData: "Approvall needs to be done by PullRequest"
+            RunOrder: 1
+
+        - Name: Promote
+          Actions:
+            - Name: ExecuteChangeSetStackProd
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt [CloudFormationRole, Arn]
+                StackName: !Join [ "-", [ !Ref "AWS::StackName", "Prod" ] ]
+                ChangeSetName: !Join [ "-", [ !Ref "AWS::StackName", "Prod" ] ]
+              InputArtifacts:
+                - Name: Out-Source
+              RunOrder: 1
+
+            - Name: DeleteReplicaProd
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: DELETE_ONLY 
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt [CloudFormationRole, Arn]
+                StackName: !Join [ "-", [ !Ref "AWS::StackName", "Replica" ] ]
+              RunOrder: 2
+            - Name: EnablePipelineTransition
+              ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Version: "1"
+                  Provider: CodeBuild
+              InputArtifacts:
+                - Name: Out-Source
+              Configuration:
+                  ProjectName: !Ref EnablePipelineTransition
+              RunOrder: 3
+
+
+  DisablePipelineTransition:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-cfn-disabletransition.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 10
+
+  EnablePipelineTransition:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-cfn-enabletransition.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 10
+
+
+  CfnLint:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-cfn-lint.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 10
+
+  CfnNag:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-cfn_nag.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/ruby:2.5.3
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 10
+
+  TaskCat:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-taskcat.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 60
+
+  SentinelPipelineRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "EventRule"
+      EventPattern: 
+        source: 
+          - "aws.codepipeline"
+      Targets: 
+        - 
+          Arn:
+            Fn::GetAtt: 
+              - "SentinelPipelineLambda"
+              - "Arn"
+          Id: "SentinelPipelineLambdaV1"
+  LambdaPermissionSentinelPipeline: 
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: 
+        Ref: SentinelPipelineLambda
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "SentinelPipelineRule"
+          - "Arn"
+
+
+  SentinelCodeCommitRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "EventRule"
+      EventPattern: 
+        source: 
+          - "aws.codecommit"
+      Targets: 
+        - 
+          Arn:
+            Fn::GetAtt: 
+              - "SentinelCodeCommitLambda"
+              - "Arn"
+          Id: "SentinelCodeCommitLambdaV1"
+  LambdaPermissionSentinelCodeCommit: 
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt 
+        - "SentinelCodeCommitLambda"
+        - "Arn"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "SentinelCodeCommitRule"
+          - "Arn"
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonKinesisFullAccess
+        - arn:aws:iam::aws:policy/job-function/SystemAdministrator
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+      Path: /
+
+  SentinelPipelineLambda: 
+    Type: "AWS::Lambda::Function"
+    Properties: 
+      Handler: "index.lambda_handler"
+      Role: 
+        Fn::GetAtt: 
+          - "LambdaExecutionRole"
+          - "Arn"
+      Runtime: "python2.7"
+      Timeout: 25
+      Environment:
+        Variables:
+          SLACK_CHANNEL: 
+            Ref: SlackChannel
+          SLACK_USER: 
+            Ref: SlackUser
+          SLACK_WEBHOOK_URL: 
+            Ref: SlackURL
+      Code:
+          ZipFile: |
+            import json
+            import logging
+            import os
+            import boto3
+            from urllib2 import Request, urlopen, URLError, HTTPError
+            SLACK_WEBHOOK_URL = os.environ['SLACK_WEBHOOK_URL']
+            SLACK_CHANNEL = os.environ['SLACK_CHANNEL']
+            SLACK_USER = os.environ['SLACK_USER']
+            logger = logging.getLogger()
+            logger.setLevel(logging.INFO)
+            def lambda_handler(event, context):
+                logger.info("Event:" + str(event))
+                if event['detail-type'] == 'CodePipeline Pipeline Execution State Change': 
+                    message = "Pipeline: %s | State: %s" %(event['detail']['pipeline'], event['detail']['state'])
+                if event['detail-type'] == 'CodePipeline Stage Execution State Change':
+                    message = "Pipeline: %s | Stage: %s | State: %s" %(event['detail']['pipeline'], event['detail']['stage'], event['detail']['state'])       
+                if event['detail-type'] == 'CodePipeline Action Execution State Change':
+                    message = "Pipeline: %s | Stage: %s | Action: %s | Provider: %s | State: %s" %(event['detail']['pipeline'], event['detail']['stage'], event['detail']['action'],event['detail']['type']['provider'], event['detail']['state']) 
+                if event['detail']['state'] == 'STARTED': icon = ":black_medium_square: "
+                if event['detail']['state'] == 'SUCCEEDED': icon = ":white_check_mark: "
+                if event['detail']['state'] == 'RESUMED': icon = ":repeat: "
+                if event['detail']['state'] == 'SUPERSEDED': icon = ":clock1030: "
+                if event['detail']['state'] == 'FAILED': icon = ":red_circle: "
+                slack_message = {
+                  'channel': SLACK_CHANNEL,
+                  'username': SLACK_USER,
+                  'text': "%s %s" %(icon, message)
+                }
+                req = Request(SLACK_WEBHOOK_URL, json.dumps(slack_message))
+                try:
+                  response = urlopen(req)
+                  response.read()
+                  logger.info("Message posted to %s", slack_message['channel'])
+                except HTTPError as e:
+                  logger.error("Request failed: %d %s", e.code, e.reason)
+                except URLError as e:
+                  logger.error("Server connection failed: %s", e.reason)
+
+  SentinelCodeCommitLambda:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+      Handler: "index.lambda_handler"
+      Role: 
+        Fn::GetAtt: 
+          - "LambdaExecutionRole"
+          - "Arn"
+      Runtime: "python2.7"
+      Timeout: 25
+      Environment:
+        Variables:
+          SLACK_CHANNEL: 
+            Ref: SlackChannel
+          SLACK_USER: 
+            Ref: SlackUser
+          SLACK_WEBHOOK_URL: 
+            Ref: SlackURL
+          PIPELINE: 
+            Ref: AWS::StackName
+      Code:
+          ZipFile: | 
+            import json
+            import logging
+            import os
+            import boto3
+            from urllib2 import Request, urlopen, URLError, HTTPError
+            SLACK_WEBHOOK_URL = os.environ['SLACK_WEBHOOK_URL']
+            SLACK_CHANNEL = os.environ['SLACK_CHANNEL']
+            SLACK_USER = os.environ['SLACK_USER']
+            PIPELINE = os.environ['PIPELINE']
+            v_stage = 'Approval'
+            v_action = 'WaitPullRequestApproval'
+            logger = logging.getLogger()
+            logger.setLevel(logging.INFO)
+            def lambda_handler(event, context):
+                logger.info("Event:" + str(event))
+                client = boto3.client('codepipeline')
+                response = client.get_pipeline_state(
+                  name = PIPELINE
+                )
+                if event['detail-type'] == 'CodeCommit Pull Request State Change': 
+                  message = ':large_blue_circle: :mag_right: %s' %(event['detail']['notificationBody'])
+                if event['detail-type'] == 'CodeCommit Comment on Pull Request':
+                  message = ':speech_balloon: pullRequestId: %s | Status: %s | Repository: %s | Author: %s | Body: %s' %(event['detail']['pullRequestId'],event['detail']['pullRequestStatus'], event['detail']['repositoryNames'][0], event['detail']['destinationReference'], event['detail']['callerUserArn'],event['detail']['notificationBody'])
+                if event['detail-type'] == 'CodeCommit Repository State Change':
+                  message = ':large_blue_diamond: Repository: %s | %s: %s ' %(event['detail']['repositoryName'],event['detail']['referenceType'],event['detail']['referenceName'])
+                if response['stageStates'][3]['actionStates'][1]['latestExecution']['status'] == 'InProgress':
+                    if event['detail']['pullRequestStatus'] == 'Closed':
+                      if event['detail']['isMerged'] == "True": 
+                        message = ":rocket: Pull Request %s from repository %s just been APPROVED! Pipeline %s will go on..." %(event['detail']['pullRequestId'], event['detail']['repositoryNames'][0], PIPELINE)
+                        response = client.put_approval_result(
+                          pipelineName= PIPELINE,
+                          stageName= v_stage,
+                          actionName= v_action,
+                          result={
+                            'summary': 'string',
+                            'status': 'Approved'
+                          },
+                          token= response['stageStates'][3]['actionStates'][1]['latestExecution']['token']
+                        )
+                slack_message = {
+                  'channel': SLACK_CHANNEL,
+                  'username': SLACK_USER,
+                  'text': "%s" % (message)
+                }
+                req = Request(SLACK_WEBHOOK_URL, json.dumps(slack_message))
+                try:
+                  response = urlopen(req)
+                  response.read()
+                  logger.info("Message posted to %s", slack_message['channel'])
+                except HTTPError as e:
+                  logger.error("Request failed: %d %s", e.code, e.reason)
+                except URLError as e:
+                  logger.error("Server connection failed: %s", e.reason)
+
+  CreateReplicaProd:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-cfn-createreplica.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+        EnvironmentVariables:
+          - Name: TEMPLATE
+            Value: !Ref TemplateToDeploy
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 60
+
+  CreatePullRequest:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'buildspecs/buildspec-cfn-createpullrequest.yml'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.6.5
+      Artifacts:
+        Type: CODEPIPELINE
+      ServiceRole: !Ref CodeBuildRole
+      TimeoutInMinutes: 10
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codebuild.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [cloudformation.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/job-function/SystemAdministrator
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codepipeline.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/job-function/SystemAdministrator
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+

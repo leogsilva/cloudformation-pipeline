@@ -1,0 +1,27 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Cria instância EC2"
+
+Parameters:
+  NetworkStack:
+    Type: String
+    Default: "Stack-SA-Sample-01"
+  AMI:
+    Type: AWS::EC2::Image::Id
+    Default: ami-0b04450959586da29
+
+Resources:
+  Ec2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AMI
+      SubnetId: 
+        Fn::ImportValue: 
+          !Sub "${NetworkStack}-PublicSubnet1"
+      SecurityGroups: 
+        - Fn::ImportValue:
+            !Sub "${NetworkStack}-SecurityGroupWeb"
+      Tags:
+        - Key: "Name"
+          Value: "Vamos testar"

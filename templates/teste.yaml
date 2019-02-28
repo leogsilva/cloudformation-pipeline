@@ -1,0 +1,11 @@
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Pipeline"
+
+Resources: 
+  ArtifactStoreBucket:
+    Type: AWS::S3::Bucket
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref AWS::StackName

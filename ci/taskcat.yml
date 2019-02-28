@@ -1,0 +1,12 @@
+---
+global:
+  owner: buenoh@amazon.com
+  qsname: cfn-layer-base
+  regions:
+    - us-east-2
+tests:
+  taskcat-json:
+    regions:
+      - us-east-2
+    parameter_input: debug-input.json
+    template_file: cfn-layer-base.yaml
