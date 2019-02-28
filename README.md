@@ -2,6 +2,10 @@
 
 ![Alt text](img.png?raw=true "Pipeline")
 
+
+### Introduction
+
+
 This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates, ensuring reliability to deploy.
 
 The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation
@@ -64,18 +68,46 @@ git commit -m "first commit at staging"
 git push origin staging   
 ```
 
-At this point CodePipeline will start and deploy Production and Replica Stacks.
+At this point CodePipeline starts and deploy Production and Replica Stacks.
 
+
+### Project structure
+
+├── README.md
+├── buildspecs
+│   ├── buildspec-cfn-createpullrequest.yml
+│   ├── buildspec-cfn-createreplica.yml
+│   ├── buildspec-cfn-disabletransition.yml
+│   ├── buildspec-cfn-enabletransition.yml
+│   ├── buildspec-cfn-lint.yml
+│   ├── buildspec-cfn_nag.yml
+│   └── buildspec-taskcat.yml
+├── ci
+│   ├── debug-input.json
+│   └── taskcat.yml
+├── hooks
+│   ├── pre-commit
+│   └── pre-push
+└── templates
+    ├── cfn-layer-base.yaml
+    └── cfn-pipeline.yaml
+    
+    
 ### Configuration
+templates/cfn-pipeline.yaml
 
-Configure this files:
-<todo>
+1) Edit the variable TemplateToDeploy with the name of your cloudformation template. Remember that your CF template must be inside "templates" directory.
+2) Slack Variables
+   - SlackUser
+   - SlackChannel
+   - SlackURL
 
+You can also pass these informations as command line parameters.
 
 
 ## Authors
 
-* **Henrique Bueno** - *Initial work* - [PurpleBooth](https://github.com/hgbueno)
+* **Henrique Bueno** - [GitHub](https://github.com/hgbueno)
 
 
 
