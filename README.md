@@ -1,5 +1,9 @@
-# Pipeline to Delivery Cloudformation Templates
-This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates, ensuring reliability to deploy.
+# CloudFormation CI/CD - Infrastructure
+The main goal of this project is to present some of the tools currently available to test and deliver IaC with quality in an automated pipeline.
+
+This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates ensuring reliability to deploy. 
+
+The idea of this project is that you can use parts of it in your own pipeline and understand how interact with these tools.
 
 
 ![Alt text](img/img01.png?raw=true "Pipeline")
@@ -40,7 +44,7 @@ For this project I created two of them - *pre-commit* and *pre-push*.
 * **Pre-Push** - Validates if pipeline is currently running. If yes, Push Command fails.
 
 ### Build
-In Build Stage, there are executing simultaneously four tasks:
+In Build Stage, there are four tasks running simultaneously:
 * **Disable transition** - Block another pipeline execution if pipeline is already running.
 * **Cfn-Lint** - Validate syntax and semantic
 * **Cfn-Nag** - Validates governance and business logic
