@@ -18,19 +18,22 @@ For CI (Continuous Integration) step, the pipeline executes these tools to verif
 * TaskCat https://github.com/aws-quickstart/taskcat
 
 A good way to get fast fail and fast feedback in your changes is using **Client Side Hooks**.
+
 **Client Site Hooks** are validations made **before** send new code to remote repository.
 
-For this project I created two o them - *pre-commit* *and pre-push*.
 
-**Pre-Commit** executes Cfn-lint and Cfn_Nag
-**Pre-Push** validates if pipeline is currently running. If yes, Push Command fails.
+For this project I created two of them - *pre-commit* *and pre-push*.
+
+* **Pre-Commit** executes Cfn-lint and Cfn_Nag
+* **Pre-Push** validates if pipeline is currently running. If yes, Push Command fails.
 
 
 After that, CodePipeline starts CD (Continuous Delivery) step. The "Test" step creates a replica of the production environment.
 
 In parallel, creates a ChangeSet to be applied at Production Environment. 
 
-After these steps, a PullRequest is automatically created. 
+After these steps, a PullRequest is **automatically** created. 
+
 
 At this time, the approver has various information available to decide whether to accept or not the PullRequest.
 
