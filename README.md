@@ -10,12 +10,16 @@ This project consists in an environment that creates a pipeline using native AWS
 
 The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation.
 
-### Overview
+---
+
+# Overview
+
+## Continuous Integration
 
 For CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
-* Cfn-lint https://github.com/awslabs/cfn-python-lint
-* Cfn_nag https://github.com/stelligent/cfn_nag
-* TaskCat https://github.com/aws-quickstart/taskcat
+*  [Cfn-lint] (https://github.com/awslabs/cfn-python-lint)
+*  [Cfn_nag] (https://github.com/stelligent/cfn_nag)
+*  [TaskCat] (https://github.com/aws-quickstart/taskcat)
 
 A good way to get fast fail and fast feedback in your changes is using **Client Side Hooks**.
 
@@ -28,24 +32,41 @@ For this project I created two of them - *pre-commit* *and pre-push*.
 * **Pre-Push** validates if pipeline is currently running. If yes, Push Command fails.
 
 
-After that, CodePipeline starts CD (Continuous Delivery) step. The "Test" step creates a replica of the production environment.
 
-In parallel, creates a ChangeSet to be applied at Production Environment. 
+## Continuous Delivery
+
+After that, CodePipeline starts CD (Continuous Delivery) step. 
+
+### Test 
+The "Test" step creates a replica of the production environment, create the ChangeSet and apply into Replica Environment.
+
+In parallel, creates a ChangeSet to be applied at Production Environment - **but do not apply yet**.
+
+
+## Approve
 
 After these steps, a PullRequest is **automatically** created. 
 
 
-At this time, the approver has various information available to decide whether to accept or not the PullRequest.
+At this time, the approver has many important information to help him decide whether accept, or not, the new code.
 
-The approver can access the Replica environment and the ChangeSet to verify all the changes that will be applied at Production environment.
 
-There's a lambda function that get the change status when PR is approved and allow pipeline to go on.
-Once the PR is approved, the pipeline merge at branch master. Developers only commit at branch staging and the pipeline merges. 
+The approver can access **Replica Environment** and **ChangeSet** to verify all the changes that will be applied into Production environment.
+
+
+There's a lambda function that get the change status when PR is approved and triggers pipeline to go on.
+Once PR is approved, pipeline merge at master branch . ***Developers only commit at staging branch and the pipeline takes care of merge***. 
+
 
 After that, ChangeSet is applied to Production environment and Replica environemnt is deleted. 
 
-Two lambda functions send informations to slack channel. One to CodePipeline and another to CodeCommit.
 
+Two lambda functions send informations to slack channel. One to CodePipeline and another to CodeCommit.
+* **Sentinel-Pipeline** Send information about any change in your pipeline
+* **Sentinel-CodeComit** Send information when a PullRequest is Open/Closed/Merged.
+
+
+---
 
 ### AWS Services:
 
@@ -56,6 +77,7 @@ Two lambda functions send informations to slack channel. One to CodePipeline and
 * CloudWatch
 * CloudFormation
 
+---
 
 # Getting Started
 
