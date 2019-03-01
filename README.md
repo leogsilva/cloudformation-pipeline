@@ -10,9 +10,11 @@ This project consists in an environment that creates a pipeline using native AWS
 
 The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation.
 
----
+
+***
 
 # Overview
+
 
 ## Continuous Integration
 
@@ -68,16 +70,6 @@ Two lambda functions send informations to slack channel. One to CodePipeline and
 
 ---
 
-### AWS Services:
-
-* CodeCommit
-* Code Pipeline
-* Code Build
-* Lambda
-* CloudWatch
-* CloudFormation
-
----
 
 # Getting Started
 
@@ -154,5 +146,14 @@ Pay attention to always push to **staging** branch! **Only the Pipeline must mer
     └── cfn-pipeline.yaml
  ```   
     
+---
 
+### AWS Services:
+
+* CodeCommit
+* Code Pipeline
+* Code Build
+* Lambda
+* CloudWatch
+* CloudFormation
 
