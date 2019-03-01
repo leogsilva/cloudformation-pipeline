@@ -11,14 +11,7 @@ phases:
   build:
     commands:
       - git config --global credential.helper '!aws codecommit credential-helper $@'
-      - git config --global credential.UseHttpPath true
-#      - git config --global user.name "pipeline"
-#      - git config --global user.email "pipeline@pipeline.com"
-      - echo $v_repo
-      - echo $v_repomaster
-      - echo $stackname
-      - pwd
-      - ls -lhas 
+      - git config --global credential.UseHttpPath true 
       - mkdir branch-base && cd branch-base
       - if [ $v_repomaster -eq 0 ]; then git clone --branch staging https://git-codecommit.$AWS_REGION.amazonaws.com/v1/repos/$v_repo .; git checkout -b master;  git merge staging; git commit -m "First Commit @ master"; git push origin master; fi
       - if [ $v_repomaster -gt 0 ]; then git clone --branch master https://git-codecommit.$AWS_REGION.amazonaws.com/v1/repos/$v_repo .; fi
