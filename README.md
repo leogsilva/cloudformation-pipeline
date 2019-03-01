@@ -13,26 +13,41 @@ The idea here is design a conceptual pipeline according to DevOps best practices
 
 ***
 
+
 # Overview
 
 
 ## Continuous Integration
 
-For CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
-*  **Cfn-lint** [https://github.com/awslabs/cfn-python-lint]
-*  **Cfn_nag** [https://github.com/stelligent/cfn_nag]
-*  **TaskCat** [https://github.com/aws-quickstart/taskcat]
+For CI (Continuous Integration) Stage, the pipeline executes these tools to verify Cloudformation templates:
+*  **Cfn-lint** https://github.com/awslabs/cfn-python-lint
+*  **Cfn_nag** https://github.com/stelligent/cfn_nag
+*  **TaskCat** https://github.com/aws-quickstart/taskcat
+
+
+### Source
+Technically, *Continuous Integration*  process starts at Developer's notebook. 
+
+A good practice is use IDE PlugIns to starts Code validation during development. At this case, we can use **Cfn-Lint** and **Cfn_Nag** PlugIns to Visual Studio Code. 
+It helps get a very fast feedback regarding your code, validating sintax/semantic and governance/business logic.
 
 A good way to get fast fail and fast feedback in your changes is using **Client Side Hooks**.
-
 **Client Site Hooks** are validations made **before** send new code to remote repository.
-
 
 For this project I created two of them - *pre-commit* and *pre-push*.
 
-* **Pre-Commit** executes Cfn-lint and Cfn_Nag
-* **Pre-Push** validates if pipeline is currently running. If yes, Push Command fails.
+* **Pre-Commit** - Executes Cfn-lint and Cfn_Nag
+* **Pre-Push** - Validates if pipeline is currently running. If yes, Push Command fails.
 
+### Build
+In Build Stage, there are executing simultaneously four tasks:
+* **Disable transition** - Block another pipeline execution if pipeline is already running.
+* **Cfn-Lint** - Validate syntax and semantic
+* **Cfn-Nag** - Validates governance and business logic
+* **TaskCat** - Validates if template can be deployed in specific regions 
+
+
+***
 
 
 ## Continuous Delivery
@@ -40,15 +55,16 @@ For this project I created two of them - *pre-commit* and *pre-push*.
 After that, CodePipeline starts CD (Continuous Delivery) step. 
 
 ### Test 
-The "Test" step creates a replica of the production environment, create the ChangeSet and apply into Replica Environment.
+This stage creates a replica of the production environment, create the ChangeSet and apply into Replica Environment.
 
 In parallel, creates a ChangeSet to be applied at Production Environment - **but do not apply yet**.
 
 
 ### Approve
 
-After these steps, a PullRequest is **automatically** created. 
+At this stage, a PullRequest is **automatically** created. 
 
+This is a very important Stage because here we ensure that other technical person will help the developer to analyze the quality of the code and the impact of that change in the environment. 
 
 At this time, the approver has many important information to help him decide whether accept, or not, the new code.
 
@@ -61,15 +77,29 @@ Once PR is approved, pipeline merge at master branch . ***Developers only commit
 
 
 ### Promote
+At this point, after all these Stages, we are high confidence that this change can be applied in our Production Environment.
 
 ChangeSet is applied to Production environment and Replica environemnt is deleted. 
+And, finally, we **enable transition** again and allow new execution of the pipeline. 
 
 
-## Leading with More than One Pipeline execution
+***
 
-A way that I found to do not permit execute more than one instance of the pipeline per time is disabling transition from Source to Build when pipeline is already running. This is made by a codebuild project.
 
-When Pipeline start Build session, this CodeBuild project disable transition. When Pipeline finish Promote session, another CodeBuildProject enable transition. 
+## Leading with more than one pipeline execution
+
+A way that I found to do not permit execute more than one instance of the pipeline per time is **disabling transition** from ***Source*** to ***Build*** when pipeline is already running. This is made by a codebuild project.
+
+When Pipeline start **Build Stage**, this CodeBuild project ***disable transition***. 
+
+When Pipeline finish **Promote Stage**, another CodeBuildProject **enable transition** again and allow new execution of the pipeline. 
+
+Without this trick, I could be problems with ChangeSet e ReplicaStacks.
+
+Another way to handle this is just using the pre-push client-side-hook that validates if the pipeline is already running and does not allow the push to the repository.
+
+
+***
 
 
 ## Pipeline Feedback using Slack
