@@ -19,16 +19,16 @@ The idea here is design a conceptual pipeline according to DevOps best practices
 ## Continuous Integration
 
 For CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
-*  [Cfn-lint] (https://github.com/awslabs/cfn-python-lint)
-*  [Cfn_nag] (https://github.com/stelligent/cfn_nag)
-*  [TaskCat] (https://github.com/aws-quickstart/taskcat)
+*  **Cfn-lint** [https://github.com/awslabs/cfn-python-lint]
+*  **Cfn_nag** [https://github.com/stelligent/cfn_nag]
+*  **TaskCat** [https://github.com/aws-quickstart/taskcat]
 
 A good way to get fast fail and fast feedback in your changes is using **Client Side Hooks**.
 
 **Client Site Hooks** are validations made **before** send new code to remote repository.
 
 
-For this project I created two of them - *pre-commit* *and pre-push*.
+For this project I created two of them - *pre-commit* and *pre-push*.
 
 * **Pre-Commit** executes Cfn-lint and Cfn_Nag
 * **Pre-Push** validates if pipeline is currently running. If yes, Push Command fails.
@@ -45,7 +45,7 @@ The "Test" step creates a replica of the production environment, create the Chan
 In parallel, creates a ChangeSet to be applied at Production Environment - **but do not apply yet**.
 
 
-## Approve
+### Approve
 
 After these steps, a PullRequest is **automatically** created. 
 
@@ -60,12 +60,23 @@ There's a lambda function that get the change status when PR is approved and tri
 Once PR is approved, pipeline merge at master branch . ***Developers only commit at staging branch and the pipeline takes care of merge***. 
 
 
-After that, ChangeSet is applied to Production environment and Replica environemnt is deleted. 
+### Promote
 
+ChangeSet is applied to Production environment and Replica environemnt is deleted. 
+
+
+## Leading with More than One Pipeline execution
+
+A way that I found to do not permit execute more than one instance of the pipeline per time is disabling transition from Source to Build when pipeline is already running. This is made by a codebuild project.
+
+When Pipeline start Build session, this CodeBuild project disable transition. When Pipeline finish Promote session, another CodeBuildProject enable transition. 
+
+
+## Pipeline Feedback using Slack
 
 Two lambda functions send informations to slack channel. One to CodePipeline and another to CodeCommit.
-* **Sentinel-Pipeline** Send information about any change in your pipeline
-* **Sentinel-CodeComit** Send information when a PullRequest is Open/Closed/Merged.
+* **Sentinel-Pipeline** - Send information about any change in your pipeline
+* **Sentinel-CodeComit** - Send information when a PullRequest is Open/Closed/Merged.
 
 
 ---
