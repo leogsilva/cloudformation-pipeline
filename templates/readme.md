@@ -1,9 +1,6 @@
 # Pipeline to Delivery Cloudformation Templates
 
-![Alt text](img/img01.png?raw=true "Pipeline")
-
-
-![Alt text](img/img02.png?raw=true "Pipeline")
+![Alt text](img/img.png?raw=true "Pipeline")
 
 
 ### Introduction
@@ -38,7 +35,6 @@ Two lambda functions send informations to slack channel. One to CodePipeline and
 
 
 ### AWS Services:
-
 - CodeCommit
 - Code Pipeline
 - Code Build
@@ -56,12 +52,20 @@ Clone this repo and create a pipeline stack
 aws cloudformation create-stack --stack-name <MyStackName> --template-body file://templates/cfn-pipeline.yaml --capabilities CAPABILITY_IAM 
 ```
 
-After that, populate the CodeCommit Repository. Remember that <MyRepoName> must be the same as <MyStackName>.
-
+After that, populate the CodeCommit Repository:
 ```
 git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/<MyRepoName> .
-git add *
+<MyRepoName> = <MyStackName> 
+
+cp -rpf /files/* .
+cp -rpf hooks/* .git/hooks 
+
+git add *true
 git commit -m "first commit" 
+git push origin master
+git checkout -b staging master
+git commit -m "first commit at staging" 
+git push origin staging   
 ```
 
 At this point CodePipeline starts and deploy Production and Replica Stacks.
@@ -91,14 +95,10 @@ At this point CodePipeline starts and deploy Production and Replica Stacks.
     └── cfn-pipeline.yaml
  ```   
     
-
 ### Configuration
-
 templates/cfn-pipeline.yaml
 
 1) Edit the variable TemplateToDeploy with the name of your cloudformation template. Remember that your CF template must be inside "templates" directory.
-
-
 2) Slack Variables
    - SlackUser
    - SlackChannel
@@ -107,8 +107,4 @@ templates/cfn-pipeline.yaml
 You can also pass these informations as command line parameters.
 
 
-3) Copy ClientSite Hooks:
- ```   
-cp -rpf hooks/* .git/hooks 
- ```   
 

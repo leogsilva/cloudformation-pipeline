@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - pip install cfn-lint
+
+  build:
+    commands:
+      - cfn-lint -t templates/*.yaml

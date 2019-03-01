@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo "EXECUTING PRE-COMMIT VALIDATION ...... "; seq 3 | xargs -I -- echo
+
+echo "EXECUTING CFN_NAG_SCAN ...... "
+cfn_nag_scan --input-path templates/ cfn-\*.yaml
+v_cfn_nag=${?}
+
+seq 3 | xargs -I -- echo
+
+echo "EXECUTING CFN_LINT ...... "
+cfn-lint templates/*
+v_cfn_lint=${?}
+seq 3 | xargs -I -- echo
+
+function_imprime()
+{
+  seq 3 | xargs -I -- echo; echo  "******************** PRE-COMMIT STATUS: $1 ********************"; seq 3 | xargs -I -- echo
+}
+
+if [ $v_cfn_nag -eq 0 ] && [ $v_cfn_lint -eq 0 ]
+then
+  function_imprime SUCCESS
+else
+  function_imprime FAIL
+  exit 1
+fi
+
+

@@ -1,0 +1,11 @@
+version: 0.2
+
+phases:
+
+  pre_build:
+    commands:
+      - stackname=$(echo $CODEBUILD_INITIATOR |cut -d/ -f2)
+
+  build:
+    commands:
+      - aws codepipeline enable-stage-transition --pipeline-name $stackname --stage-name Build  --transition-type Inbound

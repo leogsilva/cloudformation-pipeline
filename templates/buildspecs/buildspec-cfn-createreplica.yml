@@ -12,16 +12,8 @@ phases:
     commands:
       - git config --global credential.helper '!aws codecommit credential-helper $@'
       - git config --global credential.UseHttpPath true
-#      - git config --global user.name "pipeline"
-#      - git config --global user.email "pipeline@pipeline.com"
-      - echo $v_repo
-      - echo $v_repomaster
-      - echo $stackname
-      - pwd
-      - ls -lhas 
-      - mkdir branch-base && cd branch-base
-      - if [ $v_repomaster -eq 0 ]; then git clone --branch staging https://git-codecommit.$AWS_REGION.amazonaws.com/v1/repos/$v_repo .; git checkout -b master;  git merge staging; git commit -m "First Commit @ master"; git push origin master; fi
-      - if [ $v_repomaster -gt 0 ]; then git clone --branch master https://git-codecommit.$AWS_REGION.amazonaws.com/v1/repos/$v_repo .; fi
+      - if [ $v_repomaster -eq 0 ]; then git clone https://git-codecommit.$AWS_REGION.amazonaws.com/v1/repos/$v_repo branch-master; cd branch-master; git add *; git commit -m "First Commit"; git push origin master;fi
+      - if [ $v_repomaster -gt 0 ]; then git clone --branch master https://git-codecommit.$AWS_REGION.amazonaws.com/v1/repos/$v_repo branch-master; cd branch-master; fi
       - if aws cloudformation describe-stacks --stack-name $stackname; then aws cloudformation delete-stack --stack-name $stackname; aws cloudformation wait stack-delete-complete --stack-name $stackname; fi
-      - aws cloudformation create-stack --stack-name $stackname --template-body file://$TEMPLATE
+      - aws cloudformation create-stack --stack-name $stackname --template-body file://templates/$TEMPLATE
       - aws cloudformation wait stack-create-complete --stack-name $stackname || exit 0
