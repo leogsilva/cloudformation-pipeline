@@ -139,9 +139,11 @@ Two lambda functions send informations to slack channel. One to CodePipeline and
 
 
 ```
+
 git clone https://github.com/hgbueno/cloudformation-pipeline.git 
 
 aws cloudformation create-stack --stack-name <MyStackName> --template-body file://templates/cfn-pipeline.yaml --capabilities CAPABILITY_IAM 
+
 ```
 
 While Pipeline Stack is creating, configure some files to deploy your Production Stack.
@@ -188,10 +190,12 @@ git push origin staging
 
 Pay attention to always push to **staging** branch! **Only the Pipeline must merge to master!**
 
-*** Pipeline will start when you push to staging branch ***
+***Pipeline will start when you push to staging branch***
 
 
-### Project structure
+---
+
+## Project structure
 ```
 
 .
