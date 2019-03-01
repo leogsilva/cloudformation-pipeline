@@ -8,11 +8,27 @@ The idea of this project is that you can use parts of it in your own pipeline an
 
 ![Alt text](img/img01.png?raw=true "Pipeline")
 
+___
+
+### AWS Services:
+
+* CloudFormation
+* Code Pipeline
+* Code Build
+* CodeCommit
+* Lambda
+* CloudWatch
+
+
+The idea here is design a conceptual pipeline according to DevOps best practices.
+
+It's a Conceptual pipeline for delivery of stacks written in cloudformation.
+
 
 ![Alt text](img/img02.png?raw=true "CodePipeline")
 
 
-The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation.
+
 
 
 ***
@@ -191,14 +207,4 @@ Pay attention to always push to **staging** branch! **Only the Pipeline must mer
     └── cfn-pipeline.yaml
  ```   
     
----
-
-### AWS Services:
-
-* CodeCommit
-* Code Pipeline
-* Code Build
-* Lambda
-* CloudWatch
-* CloudFormation
 
