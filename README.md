@@ -1,4 +1,9 @@
 # Pipeline to Delivery Cloudformation Templates
+The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation.
+
+
+This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates, ensuring reliability to deploy.
+
 
 ![Alt text](img/img01.png?raw=true "Pipeline")
 
@@ -8,16 +13,19 @@
 
 ### Introduction
 
-The idea here is design a conceptual pipeline according to DevOps best practices. It's a Conceptual pipeline for delivery of stacks written in cloudformation.
 
+For CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
+* Cfn-lint (https://github.com/awslabs/cfn-python-lint)
+* Cfn_nag (https://github.com/stelligent/cfn_nag)
+* TaskCat (https://github.com/aws-quickstart/taskcat)
 
-This project consists in an environment that creates a pipeline using native AWS tools. This Pipeline is used to deliver Cloudformation templates, ensuring reliability to deploy.
+A good way to get fast fail and fast feedback in your changes is using **Client Side Hooks**.
+**Client Site Hooks** are validations made **before** send new code to remote repository.
 
+For this project I created two o them - *pre-commit* *and pre-push*.
 
-At CI (Continuous Integration) step, the pipeline executes these tools to verify Cloudformation templates:
-* [Cfn-lint] (https://github.com/awslabs/cfn-python-lint)
-* [Cfn_nag] (https://github.com/stelligent/cfn_nag)
-* [TaskCat] (https://github.com/aws-quickstart/taskcat)
+**Pre-Commit** executes Cfn-lint and Cfn_Nag
+**Pre-Push** validates if pipeline is currently running. If yes, Push Command fails.
 
 
 After that, CodePipeline starts CD (Continuous Delivery) step. The "Test" step creates a replica of the production environment.
