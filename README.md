@@ -166,25 +166,34 @@ By default TaskCat get templates at "/templates" directory
 
 4. Copy ClientSite Hooks:
  ```   
+
 cp -rpf hooks/* .git/hooks 
+
  ```   
 
 5. Populate CodeCommit Repository. Remember that "MyRepoName" is the same as "MyStackName".
 
 ```
 git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/<MyRepoName> .
+
 # (At this time, this repo is empty)
+
 git add *
+
 git commit -m "first commit" 
+
 git push origin staging
+
 ```
 
 Pay attention to always push to **staging** branch! **Only the Pipeline must merge to master!**
 
+*** Pipeline will start when you push to staging branch ***
 
 
 ### Project structure
 ```
+
 .
 ├── buildspecs
 │   ├── buildspec-cfn-createpullrequest.yml
@@ -205,6 +214,8 @@ Pay attention to always push to **staging** branch! **Only the Pipeline must mer
     ├── cfn-layer-base.yaml
     ├── cfn-layer_application.yaml
     └── cfn-pipeline.yaml
+
+
  ```   
     
 
