@@ -13,16 +13,16 @@ cfn-lint templates/*
 v_cfn_lint=${?}
 seq 3 | xargs -I -- echo
 
-function_imprime()
+function_print_status()
 {
   seq 3 | xargs -I -- echo; echo  "******************** PRE-COMMIT STATUS: $1 ********************"; seq 3 | xargs -I -- echo
 }
 
 if [ $v_cfn_nag -eq 0 ] && [ $v_cfn_lint -eq 0 ]
 then
-  function_imprime SUCCESS
+  function_print_status SUCCESS
 else
-  function_imprime FAIL
+  function_print_status FAIL
   exit 1
 fi
 

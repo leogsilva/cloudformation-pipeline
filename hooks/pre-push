@@ -16,16 +16,16 @@ then
 fi
 
 
-function_imprime()
+function_print_status()
 {
   seq 3 | xargs -I -- echo; echo  "******************** PRE-PUSH STATUS: $1 ********************"
 }
 
 if [ $pipeline_running -eq 0 ] 
 then
-  function_imprime SUCCESS
+  function_print_status SUCCESS
 else
-  function_imprime FAIL
+  function_print_status FAIL
   exit 1
 fi
 
