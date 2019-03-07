@@ -3,13 +3,13 @@
 echo "EXECUTING PRE-COMMIT VALIDATION ...... "; seq 3 | xargs -I -- echo
 
 echo "EXECUTING CFN_NAG_SCAN ...... "
-cfn_nag_scan --input-path templates/ cfn-\*.yaml
+cfn_nag_scan --input-path templates/cfn-*.yaml
 v_cfn_nag=${?}
 
 seq 3 | xargs -I -- echo
 
 echo "EXECUTING CFN_LINT ...... "
-cfn-lint templates/*
+cfn-lint templates/*.yaml
 v_cfn_lint=${?}
 seq 3 | xargs -I -- echo
 
